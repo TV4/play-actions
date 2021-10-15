@@ -37,6 +37,13 @@ runs:
 
     - name: Deploy Amazon ECS task definition
       env:
-        DOCKER_IMAGE: ${{ inputs.docker-registry }}/${{ inputs.service-name }}:${{ steps.short-sha.outputs.sha }}
+        DOCKER_IMAGE: ${{ inputs.docker-registry }}/${{ inputs.service-name }}
+        BUILD_TAG: ${{ steps.short-sha.outputs.sha }}
       shell: bash
-      run: docker run fabfuel/ecs-deploy:1.10.2 ecs cron ${{ inputs.cluster-name }} arn:aws:ecs:eu-west-1:${{ inputs.aws-account-id }}:task-definition/${{ inputs.service-name }} ${{ inputs.service-name }} --image main $DOCKER_IMAGE --region eu-west-1 --access-key-id ${{ inputs.aws-access-key-id }} --secret-access-key ${{ inputs.aws-secret-access-key }}
+      run: |
+        if [[ -z ${CONTAINER_NAME} ]]; then
+          export TARGET_CONTAINER_NAME="main"
+        else
+          export TARGET_CONTAINER_NAME=$CONTAINER_NAME
+        fi
+        ecs deploy ${{ inputs.cluster-name }} ${{ inputs.service-name }} --image $TARGET_CONTAINER_NAME $DOCKER_IMAGE:$BUILD_TAG -e $TARGET_CONTAINER_NAME BUILD_VERSION $BUILD_TAG -e $TARGET_CONTAINER_NAME DD_VERSION $BUILD_TAG --region eu-west-1 --access-key-id ${{ inputs.aws-access-key-id }} --secret-access-key ${{ inputs.aws-secret-access-key }} --timeout 1200
