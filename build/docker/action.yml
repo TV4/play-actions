@@ -28,7 +28,7 @@ runs:
 
     - id: short-sha
       shell: bash
-      run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+      run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build, tag, and push image to Amazon ECR
       env:
